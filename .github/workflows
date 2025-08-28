@@ -1,1 +1,44 @@
+name: Build and Publish Pentaho Kettle
 
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+
+      - name: Download Pentaho Maven settings.xml
+        run: wget -O $HOME/.m2/settings.xml https://raw.githubusercontent.com/pentaho/maven-parent-poms/master/maven-support-files/settings.xml
+
+      - name: Build with Maven
+        run: mvn clean install -DskipTests -Drelease 
+
+      - name: Package distribution
+        run: mvn clean package
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: pentaho-distribution
+          path: assemblies/client/target/*.zip
+
+      # Optional: Publish to GitHub Releases (add only for tagged releases)
+      # - name: Create Release
+      #   uses: softprops/action-gh-release@v1
+      #   with:
+      #     files: assemblies/client/target/*.zip
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
